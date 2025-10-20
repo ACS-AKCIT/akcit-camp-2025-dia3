@@ -1,0 +1,41 @@
+# Ambientes virtuais Python
+venv/
+env/
+.venv/
+
+# Arquivos Git
+.git/
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile
+docker-compose.yml
+docker-compose.yaml
+
+# Documentação
+README.md
+*.md
+
+# Cache Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Testes
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Outros
+.env
+.env.example
+.DS_Store

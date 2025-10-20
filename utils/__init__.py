@@ -1,0 +1,1 @@
+"""Subpacote com utilitários de cache, mensageria, LLM e banco vetorial."""

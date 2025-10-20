@@ -1,0 +1,1 @@
+"""Subpacote contendo a lógica de negócio central (ingestão de dados, cálculo de métricas e orquestração)."""
