@@ -9,5 +9,6 @@ chromadb>=0.4.0
 reportlab
 streamlit
 langfuse
+litellm
 openinference-instrumentation-crewai
 openinference-instrumentation-litellm
