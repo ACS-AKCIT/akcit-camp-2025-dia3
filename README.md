@@ -14,88 +14,6 @@ Sistema multi-agente avançado para análise comparativa de dividendos de açõe
 
 ---
 
-## �️ Arquitetura do Sistema
-
-```mermaid
-graph TB
-    subgraph "Camada de Interface"
-        UI[🎨 Streamlit App<br/>localhost:8501]
-    end
-
-    subgraph "Camada de Aplicação"
-        APP[🐍 Finance Advisor<br/>Python 3.12]
-        ORCH[🎭 Orchestrator<br/>core/orchestrator.py]
-        CREW[🤖 CrewAI Agents<br/>crew/crew.py]
-        
-        APP --> ORCH
-        ORCH --> CREW
-    end
-
-    subgraph "Camada de IA"
-        GEMINI[💎 Google Gemini<br/>gemini-2.0-flash-exp]
-        OPENAI[🤖 OpenAI GPT-4<br/>gpt-4-turbo-preview]
-        
-        CREW --> GEMINI
-        CREW --> OPENAI
-    end
-
-    subgraph "Camada de Dados"
-        BRAPI[📊 brapi.dev API<br/>Dados B3]
-        CACHE[⚡ Redis Cache<br/>localhost:6379]
-        LOADER[📥 Data Loader<br/>core/data_loader.py]
-        
-        ORCH --> LOADER
-        LOADER --> BRAPI
-        LOADER --> CACHE
-    end
-
-    subgraph "Camada de Observabilidade"
-        LF_WEB[🔍 Langfuse Web<br/>localhost:3000]
-        LF_WORKER[⚙️ Langfuse Worker<br/>Background Jobs]
-        LF_CLIENT[📡 Langfuse Client<br/>utils/langfuse_client.py]
-        
-        ORCH --> LF_CLIENT
-        CREW --> LF_CLIENT
-        LF_CLIENT --> LF_WEB
-        LF_WEB --> LF_WORKER
-    end
-
-    subgraph "Camada de Persistência"
-        POSTGRES[(🐘 PostgreSQL<br/>localhost:5432<br/>Langfuse Data)]
-        CLICKHOUSE[(📈 ClickHouse<br/>localhost:8123<br/>Analytics)]
-        MINIO[🗄️ MinIO<br/>localhost:9000<br/>Object Storage]
-        
-        LF_WEB --> POSTGRES
-        LF_WORKER --> POSTGRES
-        LF_WEB --> CLICKHOUSE
-        LF_WEB --> MINIO
-    end
-
-    subgraph "Rede Docker"
-        NETWORK[🌐 finance-advisor-network<br/>Bridge Network]
-    end
-
-    UI --> APP
-    
-    APP -.-> NETWORK
-    CACHE -.-> NETWORK
-    LF_WEB -.-> NETWORK
-    LF_WORKER -.-> NETWORK
-    POSTGRES -.-> NETWORK
-    CLICKHOUSE -.-> NETWORK
-    MINIO -.-> NETWORK
-
-    style UI fill:#e1f5ff,stroke:#01579b,stroke-width:2px
-    style APP fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    style CREW fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
-    style GEMINI fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
-    style OPENAI fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
-    style CACHE fill:#ffebee,stroke:#b71c1c,stroke-width:2px
-    style LF_WEB fill:#e0f2f1,stroke:#004d40,stroke-width:2px
-    style POSTGRES fill:#e3f2fd,stroke:#0d47a1,stroke-width:2px
-    style NETWORK fill:#fce4ec,stroke:#880e4f,stroke-width:2px
-```
-
 ### 📊 Fluxo de Dados
 
 1. **Usuário** → Streamlit UI (localhost:8501)
@@ -113,7 +31,7 @@ graph TB
 
 ---
 
-## �🎯 Funcionalidades Principais
+## 🎯 Funcionalidades Principais
 
 ### 📊 Análise Financeira
 ✅ Análise comparativa de múltiplas ações simultaneamente  
@@ -138,7 +56,7 @@ graph TB
 - **Chave de API** do Google AI Studio (Gemini) **ou** OpenAI
 - Token da **brapi.dev** (opcional, mas recomendado)
 - 4GB+ de RAM disponível
-- Portas livres: 8501 (app), 3000 (Langfuse), 6379 (Redis)
+- Portas livres: 8501 (app), 3000 (Langfuse Web), 9093 (MinIO API)
 
 ---
 
@@ -197,7 +115,11 @@ docker compose up -d
 Isso iniciará **todos os serviços** em containers:
 - ✅ Finance Advisor (porta 8501)
 - ✅ Langfuse Web (porta 3000)
-- ✅ Redis, PostgreSQL, ClickHouse, MinIO
+- ✅ Langfuse Worker (porta local 3030)
+- ✅ MinIO (porta 9093 - API, porta local 9094 - console)
+- ✅ Redis (porta local 6379)
+- ✅ PostgreSQL (porta local 5432)
+- ✅ ClickHouse (portas locais 8123, 9000)
 
 **Verificar status:**
 ```bash
@@ -315,43 +237,84 @@ print(resposta)
 
 ### Stack Completo
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    USUÁRIO / BROWSER                         │
-│                  http://localhost:8501                        │
-└───────────────────────┬─────────────────────────────────────┘
-                        │
-                        ▼
-┌─────────────────────────────────────────────────────────────┐
-│                  FINANCE ADVISOR APP                         │
-│                    (Streamlit)                               │
-│              Container: finance-advisor-app                  │
-└──────┬────────────────┬──────────────┬───────────────────────┘
-       │                │              │
-       ▼                ▼              ▼
-┌──────────────┐ ┌─────────────┐ ┌──────────────┐
-│ Orchestrator │ │ Data Loader │ │ CrewAI       │
-│              │ │             │ │ Multi-Agent  │
-└──────┬───────┘ └──────┬──────┘ └──────┬───────┘
-       │                │               │
-       ▼                ▼               ▼
-┌─────────────────────────────────────────────────────────────┐
-│                  INFRAESTRUTURA                              │
-├──────────────┬──────────────┬──────────────┬────────────────┤
-│   Langfuse   │    Redis     │  PostgreSQL  │   ClickHouse   │
-│  (port 3000) │ (port 6379)  │ (port 5432)  │  (port 8123)   │
-│              │              │              │                │
-│ Observability│    Cache     │  Langfuse    │   Langfuse     │
-│   Tracing    │ Rate Limit   │     DB       │   Analytics    │
-└──────────────┴──────────────┴──────────────┴────────────────┘
-       │                                              │
-       ▼                                              ▼
-┌──────────────┐                              ┌────────────────┐
-│    MinIO     │                              │  brapi.dev     │
-│ (port 9090)  │                              │   (API)        │
-│              │                              │                │
-│ File Storage │                              │  B3 Data       │
-└──────────────┘                              └────────────────┘
+```mermaid
+graph TB
+    subgraph "Camada de Interface"
+        UI[🎨 Streamlit App<br/>localhost:8501]
+    end
+
+    subgraph "Camada de Aplicação"
+        APP[🐍 Finance Advisor<br/>Python 3.12]
+        ORCH[🎭 Orchestrator<br/>core/orchestrator.py]
+        CREW[🤖 CrewAI Agents<br/>crew/crew.py]
+        
+        APP --> ORCH
+        ORCH --> CREW
+    end
+
+    subgraph "Camada de IA"
+        GEMINI[💎 Google Gemini<br/>gemini-2.0-flash-exp]
+        OPENAI[🤖 OpenAI GPT-4<br/>gpt-4-turbo-preview]
+        
+        CREW --> GEMINI
+        CREW --> OPENAI
+    end
+
+    subgraph "Camada de Dados"
+        BRAPI[📊 brapi.dev API<br/>Dados B3]
+        CACHE[⚡ Redis Cache<br/>localhost:6379]
+        LOADER[📥 Data Loader<br/>core/data_loader.py]
+        
+        ORCH --> LOADER
+        LOADER --> BRAPI
+        LOADER --> CACHE
+    end
+
+    subgraph "Camada de Observabilidade"
+        LF_WEB[🔍 Langfuse Web<br/>localhost:3000]
+        LF_WORKER[⚙️ Langfuse Worker<br/>Background Jobs]
+        LF_CLIENT[📡 Langfuse Client<br/>utils/langfuse_client.py]
+        
+        ORCH --> LF_CLIENT
+        CREW --> LF_CLIENT
+        LF_CLIENT --> LF_WEB
+        LF_WEB --> LF_WORKER
+    end
+
+    subgraph "Camada de Persistência"
+        POSTGRES[(🐘 PostgreSQL<br/>localhost:5432<br/>Langfuse Data)]
+        CLICKHOUSE[(📈 ClickHouse<br/>localhost:8123<br/>Analytics)]
+        MINIO[🗄️ MinIO<br/>localhost:9000<br/>Object Storage]
+        
+        LF_WEB --> POSTGRES
+        LF_WORKER --> POSTGRES
+        LF_WEB --> CLICKHOUSE
+        LF_WEB --> MINIO
+    end
+
+    subgraph "Rede Docker"
+        NETWORK[🌐 finance-advisor-network<br/>Bridge Network]
+    end
+
+    UI --> APP
+    
+    APP -.-> NETWORK
+    CACHE -.-> NETWORK
+    LF_WEB -.-> NETWORK
+    LF_WORKER -.-> NETWORK
+    POSTGRES -.-> NETWORK
+    CLICKHOUSE -.-> NETWORK
+    MINIO -.-> NETWORK
+
+    style UI fill:#e1f5ff,stroke:#01579b,stroke-width:2px
+    style APP fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    style CREW fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    style GEMINI fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+    style OPENAI fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+    style CACHE fill:#ffebee,stroke:#b71c1c,stroke-width:2px
+    style LF_WEB fill:#e0f2f1,stroke:#004d40,stroke-width:2px
+    style POSTGRES fill:#e3f2fd,stroke:#0d47a1,stroke-width:2px
+    style NETWORK fill:#fce4ec,stroke:#880e4f,stroke-width:2px
 ```
 
 ### Serviços Docker
@@ -360,11 +323,13 @@ print(resposta)
 |---------|-----------|-------|--------|
 | **app** | Finance Advisor (Streamlit) | 8501 | Público |
 | **langfuse-web** | Dashboard de observabilidade | 3000 | Público |
-| **langfuse-worker** | Worker de processamento | 3030 | Local |
-| **redis** | Cache e rate limiting | 6379 | Local |
-| **postgres** | Banco de dados Langfuse | 5432 | Local |
-| **clickhouse** | Analytics Langfuse | 8123/9000 | Local |
-| **minio** | Object storage | 9090 | Público |
+| **langfuse-worker** | Worker de processamento | 127.0.0.1:3030 | Local |
+| **minio** | Object storage (API) | 9093 | Público |
+| **minio** | Object storage (Console) | 127.0.0.1:9094 | Local |
+| **redis** | Cache e rate limiting | 127.0.0.1:6379 | Local |
+| **postgres** | Banco de dados Langfuse | 127.0.0.1:5432 | Local |
+| **clickhouse** | Analytics Langfuse (HTTP) | 127.0.0.1:8123 | Local |
+| **clickhouse** | Analytics Langfuse (Native) | 127.0.0.1:9000 | Local |
 
 ### Volumes Persistentes
 
@@ -905,7 +870,7 @@ MINIO_ROOT_PASSWORD=miniosecret       # Altere!
 - Use cache para reduzir chamadas
 - Implemente rate limiting
 
-### � Licença e Contribuições
+### 📝 Licença e Contribuições
 
 Este projeto é de **código aberto** para fins educacionais.
 
