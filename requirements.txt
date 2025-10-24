@@ -4,8 +4,9 @@ pandas
 numpy
 python-dotenv
 google-generativeai
-crewai>=0.28.0
-chromadb>=0.4.0
+crewai
+crewai[google-genai]
+chromadb
 reportlab
 streamlit
 langfuse

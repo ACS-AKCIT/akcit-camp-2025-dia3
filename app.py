@@ -23,10 +23,7 @@ st.divider()
 
 # Lista de ações disponíveis (principais da B3)
 ACOES_DISPONIVEIS = [
-    "PETR4", "VALE3", "ITUB4", "BBDC4", "BBAS3",
-    "ABEV3", "B3SA3", "RENT3", "ELET3", "ENBR3",
-    "WEGE3", "SUZB3", "RAIL3", "JBSS3", "EMBR3",
-    "CPLE6", "TAEE11", "CMIG4", "CSAN3", "VIVT3"
+    "PETR4", "VALE3", "ITUB4", "MGLU3"
 ]
 
 # Sidebar - Configurações
