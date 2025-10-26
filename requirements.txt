@@ -4,7 +4,7 @@ pandas
 numpy
 python-dotenv
 google-generativeai
-crewai=1.0.0
+crewai==1.0.0
 crewai[google-genai]
 chromadb
 reportlab
